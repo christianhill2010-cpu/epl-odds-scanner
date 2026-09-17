@@ -181,23 +181,70 @@ Initial API endpoints:
 
 Start with the backend and test it directly with Postman or curl before building the frontend.
 
-From the repo root:
+### First-Time Setup
+
+From the repo root, create the virtual environment and install dependencies:
 
 ```powershell
 cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
-python -m uvicorn app.main:app --reload
 ```
 
-The API will run at:
+### Start Backend
+
+From `backend/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+The API runs at:
 
 ```txt
 http://localhost:8000
 ```
 
-Useful local endpoints:
+FastAPI also exposes interactive docs:
+
+```txt
+http://localhost:8000/docs
+http://localhost:8000/redoc
+```
+
+### Stop Backend
+
+If the backend is running in the current terminal, press `Ctrl+C`.
+
+If it is running in the background, find and stop Uvicorn:
+
+```powershell
+Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*uvicorn*app.main:app*' } | Select-Object ProcessId, CommandLine
+Stop-Process -Id <PID>
+```
+
+### Restart Backend
+
+Restart after changing `.env.local`, dependencies, or startup code:
+
+```powershell
+Stop-Process -Id <PID>
+cd "C:\Users\Chris\Documents\My Projects\epl-odds-scanner\backend"
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+### Run Tests
+
+From `backend/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+```
+
+## Local API Reference
+
+### Endpoints
 
 ```txt
 GET  http://localhost:8000/health
@@ -206,7 +253,23 @@ GET  http://localhost:8000/scans
 GET  http://localhost:8000/scans/1
 ```
 
-Example `POST /scans` body:
+### `GET /health`
+
+Confirms the backend is running.
+
+Example response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+### `POST /scans`
+
+Runs an on-demand scan.
+
+Live mode request:
 
 ```json
 {
@@ -214,13 +277,51 @@ Example `POST /scans` body:
 }
 ```
 
-`POST /scans` calls The Odds API by default. To test the API and arbitrage math without live provider credentials, use demo mode:
+Live mode calls The Odds API and requires `THE_ODDS_API_KEY` in `backend/.env.local`.
+
+Demo mode request:
 
 ```json
 {
   "bankroll": 100,
   "demo": true
 }
+```
+
+Demo mode uses fixed sample prices and does not call The Odds API.
+
+Common responses:
+
+- `200`: scan completed.
+- `400`: missing or invalid local configuration, such as `THE_ODDS_API_KEY`.
+- `502`: The Odds API returned an error or unexpected response.
+
+### `GET /scans`
+
+Currently returns an empty scan list until SQLite persistence is wired:
+
+```json
+{
+  "scans": []
+}
+```
+
+### `GET /scans/{scan_id}`
+
+Currently returns a placeholder response until SQLite persistence is wired.
+
+### Postman
+
+Postman files live in:
+
+```txt
+postman/
+```
+
+Use the `EPL Odds Scanner Local` environment. It defines:
+
+```txt
+baseUrl=http://localhost:8000
 ```
 
 ## Data Flow

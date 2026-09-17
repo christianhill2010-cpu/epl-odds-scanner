@@ -1,7 +1,7 @@
 $kind: collection
 name: EPL Odds Scanner API
 description: |-
-  API collection for the EPL Odds Scanner backend — a FastAPI service that scans
+  API collection for the EPL Odds Scanner backend - a FastAPI service that scans
   English Premier League match odds across bookmakers and identifies arbitrage
   opportunities.
 

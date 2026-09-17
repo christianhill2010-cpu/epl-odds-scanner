@@ -3,16 +3,19 @@ name: Run Scan
 method: POST
 url: '{{baseUrl}}/scans'
 description: |-
-  Triggers an arbitrage scan. Currently runs in **demo mode** using hardcoded
-  odds for Arsenal vs Chelsea (match_winner market) until the live odds provider
-  is wired.
+  Triggers an arbitrage scan.
+
+  By default this calls The Odds API using the backend `.env.local` settings.
+  To test without using live provider credentials or API quota, add `"demo": true`
+  to the request body.
 
   Returns a `ScanResponse` with:
-  - `mode` – "demo" or "live"
-  - `scanned_at` – ISO-8601 timestamp
-  - `opportunity_count` – number of arb opportunities found
-  - `opportunities` – list of `MarketEvaluation` objects
-  - `warnings` – any advisory messages
+  - `mode` - "demo" or "live"
+  - `scanned_at` - ISO-8601 timestamp
+  - `evaluated_market_count` - number of complete markets evaluated
+  - `opportunity_count` - number of arb opportunities found
+  - `opportunities` - list of `MarketEvaluation` objects
+  - `warnings` - any advisory messages
 order: 2000
 headers:
   - key: Content-Type
