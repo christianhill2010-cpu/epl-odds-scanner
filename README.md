@@ -87,25 +87,94 @@ return_i = stake_i * odds_i
 locked_profit = return_i - bankroll
 ```
 
-## Suggested Architecture
+## Architecture
 
-The recommended Version 1 stack is a TypeScript web app with a backend API.
+Version 1 uses a simple split application:
 
-Good default:
+- Frontend: Vite, React, and TypeScript.
+- Backend: Python, FastAPI, and Pydantic.
+- Database: SQLite.
+- Database access: SQLAlchemy and Alembic.
+- HTTP client: httpx.
+- Tests: pytest for backend logic and Vitest for frontend behavior when needed.
 
-- Next.js.
-- TypeScript.
-- Server-side API routes for odds fetching and arbitrage calculation.
-- SQLite for persisted scan runs and opportunity history.
+The frontend should stay thin. It is responsible for scan controls, loading states, tables, and detail panels. The backend owns odds fetching, normalization, arbitrage detection, stake sizing, persistence, and risk checks.
+
+System diagram:
+
+```mermaid
+flowchart LR
+    User[User] --> Frontend[Vite React UI]
+    Frontend -->|POST /scans| API[FastAPI Backend]
+    Frontend -->|GET /scans| API
+
+    API --> OddsClient[Odds Provider Client]
+    OddsClient --> OddsAPI[The Odds API]
+    OddsAPI --> OddsClient
+
+    API --> Normalization[Normalize Markets]
+    Normalization --> BestPrices[Select Best Prices]
+    BestPrices --> Arbitrage[Detect Arbitrage]
+    Arbitrage --> Staking[Calculate Stakes]
+    Staking --> RiskChecks[Add Risk Warnings]
+
+    API --> SQLite[(SQLite)]
+    SQLite --> API
+
+    RiskChecks --> API
+    API -->|Scan results| Frontend
+```
+
+Recommended repo shape:
+
+```txt
+backend/
+  app/
+    main.py
+    config.py
+    db.py
+    api/
+      health.py
+      scans.py
+    odds/
+      the_odds_api.py
+      models.py
+    normalization/
+      markets.py
+      teams.py
+    arbitrage/
+      calculator.py
+      staking.py
+      risk_checks.py
+    storage/
+      schema.py
+      repositories.py
+  tests/
+
+frontend/
+  src/
+    api/
+    components/
+    pages/
+    types/
+```
 
 Main modules:
 
-- `odds-providers`: fetch raw odds from The Odds API.
+- `odds`: fetch raw odds from The Odds API.
 - `normalization`: map provider-specific events, markets, outcomes, and lines into canonical values.
-- `best-prices`: select the best available price per canonical outcome.
+- `best_prices`: select the best available price per canonical outcome.
 - `arbitrage`: calculate implied totals and identify opportunities.
 - `staking`: calculate stake sizing and locked profit.
-- `risk-checks`: flag stale odds, missing outcomes, line mismatches, and incomplete markets.
+- `risk_checks`: flag stale odds, missing outcomes, line mismatches, and incomplete markets.
+- `storage`: persist scan runs, odds prices, and opportunities in SQLite.
+
+Initial API endpoints:
+
+- `GET /health`: confirm the backend is running.
+- `POST /scans`: run a new on-demand scan.
+- `GET /scans`: list previous scan runs.
+- `GET /scans/{scan_id}`: return one scan and its results.
 
 ## Data Flow
 
@@ -137,15 +206,16 @@ Version 1 should display timestamps prominently and avoid presenting opportuniti
 ## Build Milestones
 
 1. Scaffold the web app.
-2. Add SQLite schema and migrations for scan runs and scan results.
-3. Add environment configuration for The Odds API.
-4. Implement the odds provider client.
-5. Implement canonical market normalization for the three Version 1 markets.
-6. Implement best-price selection.
-7. Implement arbitrage and staking calculations.
-8. Build the scanner UI and opportunity detail panel.
-9. Add tests for arbitrage math and normalization.
-10. Add risk warnings and stale-data handling.
+2. Scaffold the FastAPI backend.
+3. Add SQLite schema and Alembic migrations for scan runs and scan results.
+4. Add environment configuration for The Odds API.
+5. Implement the odds provider client.
+6. Implement canonical market normalization for the three Version 1 markets.
+7. Implement best-price selection.
+8. Implement arbitrage and staking calculations.
+9. Build the scanner UI and opportunity detail panel.
+10. Add tests for arbitrage math and normalization.
+11. Add risk warnings and stale-data handling.
 
 ## Environment Variables
 
