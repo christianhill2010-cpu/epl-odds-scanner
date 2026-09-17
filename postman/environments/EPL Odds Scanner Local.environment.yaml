@@ -1,0 +1,10 @@
+name: EPL Odds Scanner Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:8000'
+    enabled: true
+    type: default
+  - key: scan_id
+    value: '1'
+    enabled: true
+    type: default

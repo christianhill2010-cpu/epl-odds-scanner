@@ -1,0 +1,25 @@
+$kind: http-request
+name: Run Scan
+method: POST
+url: '{{baseUrl}}/scans'
+description: |-
+  Triggers an arbitrage scan. Currently runs in **demo mode** using hardcoded
+  odds for Arsenal vs Chelsea (match_winner market) until the live odds provider
+  is wired.
+
+  Returns a `ScanResponse` with:
+  - `mode` – "demo" or "live"
+  - `scanned_at` – ISO-8601 timestamp
+  - `opportunity_count` – number of arb opportunities found
+  - `opportunities` – list of `MarketEvaluation` objects
+  - `warnings` – any advisory messages
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "bankroll": 100.0
+    }

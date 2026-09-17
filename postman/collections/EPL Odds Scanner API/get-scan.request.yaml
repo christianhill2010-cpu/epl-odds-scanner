@@ -1,0 +1,9 @@
+$kind: http-request
+name: Get Scan by ID
+method: GET
+url: '{{baseUrl}}/scans/{{scan_id}}'
+description: Retrieves a specific scan by its integer ID. Returns `scan_id` and `status` fields.
+order: 4000
+pathVariables:
+  - key: scan_id
+    value: '1'

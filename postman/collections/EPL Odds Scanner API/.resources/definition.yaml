@@ -1,0 +1,10 @@
+$kind: collection
+name: EPL Odds Scanner API
+description: |-
+  API collection for the EPL Odds Scanner backend — a FastAPI service that scans
+  English Premier League match odds across bookmakers and identifies arbitrage
+  opportunities.
+
+  Base URL: {{baseUrl}}  (default: http://localhost:8000)
+auth:
+  type: noauth

@@ -1,0 +1,6 @@
+$kind: http-request
+name: List Scans
+method: GET
+url: '{{baseUrl}}/scans'
+description: Returns a list of all previously stored scans. Currently returns an empty list (storage not yet wired).
+order: 3000

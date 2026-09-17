@@ -176,6 +176,45 @@ Initial API endpoints:
 - `GET /scans`: list previous scan runs.
 - `GET /scans/{scan_id}`: return one scan and its results.
 
+## Backend Development
+
+Start with the backend and test it directly with Postman or curl before building the frontend.
+
+From the repo root:
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+python -m uvicorn app.main:app --reload
+```
+
+The API will run at:
+
+```txt
+http://localhost:8000
+```
+
+Useful local endpoints:
+
+```txt
+GET  http://localhost:8000/health
+POST http://localhost:8000/scans
+GET  http://localhost:8000/scans
+GET  http://localhost:8000/scans/1
+```
+
+Example `POST /scans` body:
+
+```json
+{
+  "bankroll": 100
+}
+```
+
+The first version of `POST /scans` returns demo odds so the API and arbitrage math can be tested before The Odds API integration is wired in.
+
 ## Data Flow
 
 ```txt
@@ -225,6 +264,7 @@ Use `.env.local` for local development:
 
 ```txt
 THE_ODDS_API_KEY=
+DATABASE_URL=sqlite:///./epl_odds_scanner.db
 ```
 
 Commit an `.env.example` file with variable names only, so the required configuration is documented without exposing real credentials.

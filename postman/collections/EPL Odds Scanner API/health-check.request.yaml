@@ -1,0 +1,6 @@
+$kind: http-request
+name: Health Check
+method: GET
+url: '{{baseUrl}}/health'
+description: Returns the health status of the API server.
+order: 1000
