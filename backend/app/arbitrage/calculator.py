@@ -8,6 +8,7 @@ class OutcomePrice:
     outcome: str
     bookmaker: str
     decimal_odds: float
+    last_update: str | None = None
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,7 @@ class MarketEvaluation:
                     "outcome": outcome.outcome,
                     "bookmaker": outcome.bookmaker,
                     "decimal_odds": outcome.decimal_odds,
+                    "last_update": outcome.last_update,
                 }
                 for outcome in self.outcomes
             ],

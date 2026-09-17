@@ -1,20 +1,28 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.arbitrage.calculator import OutcomePrice, evaluate_market
+from app.normalization.markets import normalize_odds_events
+from app.odds.the_odds_api import (
+    OddsApiConfigurationError,
+    OddsApiRequestError,
+    TheOddsApiClient,
+)
 
 router = APIRouter(prefix="/scans", tags=["scans"])
 
 
 class ScanRequest(BaseModel):
     bankroll: float = Field(default=100.0, gt=0)
+    demo: bool = False
 
 
 class ScanResponse(BaseModel):
     mode: str
     scanned_at: datetime
+    evaluated_market_count: int
     opportunity_count: int
     opportunities: list[dict]
     warnings: list[str]
@@ -22,11 +30,52 @@ class ScanResponse(BaseModel):
 
 @router.post("", response_model=ScanResponse)
 def run_scan(request: ScanRequest) -> ScanResponse:
-    # Demo prices let us exercise the API and math before the live odds provider is wired.
+    if request.demo:
+        return _run_demo_scan(request.bankroll)
+
+    client = TheOddsApiClient()
+    try:
+        raw_events = client.fetch_epl_odds()
+    except OddsApiConfigurationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except OddsApiRequestError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    evaluated_markets = [
+        evaluate_market(
+            event_name=market.event_name,
+            market=market.market,
+            bankroll=request.bankroll,
+            outcomes=market.outcomes,
+        )
+        for market in normalize_odds_events(raw_events)
+    ]
+    opportunities = [
+        market.to_dict()
+        for market in sorted(evaluated_markets, key=lambda item: item.margin, reverse=True)
+        if market.is_arbitrage
+    ]
+
+    warnings = [
+        "BTTS is not included in the core EPL odds feed used by Version 1 live scanning.",
+        "Only complete match winner and over/under 2.5 markets are evaluated.",
+    ]
+
+    return ScanResponse(
+        mode="live",
+        scanned_at=datetime.now(UTC),
+        evaluated_market_count=len(evaluated_markets),
+        opportunity_count=len(opportunities),
+        opportunities=opportunities,
+        warnings=warnings,
+    )
+
+
+def _run_demo_scan(bankroll: float) -> ScanResponse:
     demo_market = evaluate_market(
         event_name="Arsenal vs Chelsea",
         market="match_winner",
-        bankroll=request.bankroll,
+        bankroll=bankroll,
         outcomes=[
             OutcomePrice(outcome="Arsenal", bookmaker="DemoBook A", decimal_odds=2.20),
             OutcomePrice(outcome="Draw", bookmaker="DemoBook B", decimal_odds=3.80),
@@ -39,9 +88,10 @@ def run_scan(request: ScanRequest) -> ScanResponse:
     return ScanResponse(
         mode="demo",
         scanned_at=datetime.now(UTC),
+        evaluated_market_count=1,
         opportunity_count=len(opportunities),
         opportunities=opportunities,
-        warnings=["Live odds provider is not wired yet; this endpoint currently returns demo data."],
+        warnings=["Demo mode uses fixed sample prices and does not call The Odds API."],
     )
 
 

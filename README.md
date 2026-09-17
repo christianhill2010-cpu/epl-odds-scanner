@@ -20,8 +20,9 @@ Version 1 focuses on a reliable manual scanner before adding scheduled monitorin
 ### Initial Markets
 
 - Match winner.
-- Both teams to score.
 - Over/under 2.5 goals.
+
+BTTS is still a target market, but it is not part of the core EPL `/odds/` feed currently used by Version 1 live scanning. Add it when the provider plan/endpoint supports soccer additional markets for EPL.
 
 ### Deferred
 
@@ -213,7 +214,14 @@ Example `POST /scans` body:
 }
 ```
 
-The first version of `POST /scans` returns demo odds so the API and arbitrage math can be tested before The Odds API integration is wired in.
+`POST /scans` calls The Odds API by default. To test the API and arbitrage math without live provider credentials, use demo mode:
+
+```json
+{
+  "bankroll": 100,
+  "demo": true
+}
+```
 
 ## Data Flow
 
@@ -264,6 +272,10 @@ Use `.env.local` for local development:
 
 ```txt
 THE_ODDS_API_KEY=
+THE_ODDS_API_BASE_URL=https://api.theoddsapi.com
+ODDS_SPORT_KEY=soccer_epl
+ODDS_REGIONS=uk,eu
+ODDS_MARKETS=h2h,totals
 DATABASE_URL=sqlite:///./epl_odds_scanner.db
 ```
 
