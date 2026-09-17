@@ -162,7 +162,7 @@ frontend/
 
 Main modules:
 
-- `odds`: fetch raw odds from The Odds API.
+- `odds`: fetch raw odds from API-Football or The Odds API.
 - `normalization`: map provider-specific events, markets, outcomes, and lines into canonical values.
 - `best_prices`: select the best available price per canonical outcome.
 - `arbitrage`: calculate implied totals and identify opportunities.
@@ -277,7 +277,23 @@ Live mode request:
 }
 ```
 
-Live mode calls The Odds API and requires `THE_ODDS_API_KEY` in `backend/.env.local`.
+Live mode uses the configured `ODDS_PROVIDER` from `backend/.env.local`. The default provider is `api_football`.
+
+Supported live sources:
+
+```txt
+api_football
+the_odds_api
+```
+
+Live mode request with explicit source:
+
+```json
+{
+  "bankroll": 100,
+  "source": "api_football"
+}
+```
 
 Demo mode request:
 
@@ -372,6 +388,11 @@ Secrets should not be committed to the repo or written directly in this README.
 Use `.env.local` for local development:
 
 ```txt
+ODDS_PROVIDER=api_football
+API_FOOTBALL_KEY=
+API_FOOTBALL_BASE_URL=https://v3.football.api-sports.io
+API_FOOTBALL_LEAGUE_ID=39
+API_FOOTBALL_SEASON=2026
 THE_ODDS_API_KEY=
 THE_ODDS_API_BASE_URL=https://api.theoddsapi.com
 ODDS_SPORT_KEY=soccer_epl

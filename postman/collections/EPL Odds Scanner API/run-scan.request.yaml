@@ -5,12 +5,13 @@ url: '{{baseUrl}}/scans'
 description: |-
   Triggers an arbitrage scan.
 
-  By default this calls The Odds API using the backend `.env.local` settings.
+  By default this calls the configured odds provider using the backend
+  `.env.local` settings. The current default provider is `api_football`.
   To test without using live provider credentials or API quota, add `"demo": true`
   to the request body.
 
   Returns a `ScanResponse` with:
-  - `mode` - "demo" or "live"
+  - `mode` - "demo", "api_football", or "the_odds_api"
   - `scanned_at` - ISO-8601 timestamp
   - `evaluated_market_count` - number of complete markets evaluated
   - `opportunity_count` - number of arb opportunities found
@@ -24,5 +25,6 @@ body:
   type: json
   content: |-
     {
-      "bankroll": 100.0
+      "bankroll": 100.0,
+      "source": "api_football"
     }

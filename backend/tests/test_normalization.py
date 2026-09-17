@@ -91,3 +91,68 @@ def test_normalize_odds_events_supports_books_shape() -> None:
 
     assert len(markets) == 1
     assert markets[0].market == "match_winner"
+
+
+def test_normalize_odds_events_supports_api_football_shape() -> None:
+    markets = normalize_odds_events(
+        [
+            {
+                "fixture": {"id": 123},
+                "teams": {
+                    "home": {"name": "Arsenal"},
+                    "away": {"name": "Chelsea"},
+                },
+                "update": "2026-09-17T12:00:00Z",
+                "bookmakers": [
+                    {
+                        "name": "Bet365",
+                        "bets": [
+                            {
+                                "name": "Match Winner",
+                                "values": [
+                                    {"value": "Home", "odd": "2.10"},
+                                    {"value": "Draw", "odd": "3.70"},
+                                    {"value": "Away", "odd": "4.00"},
+                                ],
+                            },
+                            {
+                                "name": "Goals Over/Under",
+                                "values": [
+                                    {"value": "Over 2.5", "odd": "1.95"},
+                                    {"value": "Under 2.5", "odd": "1.95"},
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "name": "Betfair",
+                        "bets": [
+                            {
+                                "name": "Match Winner",
+                                "values": [
+                                    {"value": "Home", "odd": "2.20"},
+                                    {"value": "Draw", "odd": "3.60"},
+                                    {"value": "Away", "odd": "3.90"},
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            }
+        ]
+    )
+
+    by_market = {market.market: market for market in markets}
+
+    assert set(by_market) == {"match_winner", "over_under_2_5"}
+    assert by_market["match_winner"].event_name == "Arsenal vs Chelsea"
+    assert [outcome.outcome for outcome in by_market["match_winner"].outcomes] == [
+        "Home",
+        "Draw",
+        "Away",
+    ]
+    assert [outcome.decimal_odds for outcome in by_market["match_winner"].outcomes] == [
+        2.2,
+        3.7,
+        4.0,
+    ]

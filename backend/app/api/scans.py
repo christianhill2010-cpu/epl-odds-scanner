@@ -4,7 +4,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.arbitrage.calculator import OutcomePrice, evaluate_market
+from app.config import get_settings
 from app.normalization.markets import normalize_odds_events
+from app.odds.api_football import (
+    ApiFootballClient,
+    ApiFootballConfigurationError,
+    ApiFootballRequestError,
+)
 from app.odds.the_odds_api import (
     OddsApiConfigurationError,
     OddsApiRequestError,
@@ -17,6 +23,7 @@ router = APIRouter(prefix="/scans", tags=["scans"])
 class ScanRequest(BaseModel):
     bankroll: float = Field(default=100.0, gt=0)
     demo: bool = False
+    source: str | None = None
 
 
 class ScanResponse(BaseModel):
@@ -33,13 +40,15 @@ def run_scan(request: ScanRequest) -> ScanResponse:
     if request.demo:
         return _run_demo_scan(request.bankroll)
 
-    client = TheOddsApiClient()
+    source = request.source or get_settings().odds_provider
     try:
-        raw_events = client.fetch_epl_odds()
-    except OddsApiConfigurationError as exc:
+        raw_events = _fetch_raw_events(source)
+    except (ApiFootballConfigurationError, OddsApiConfigurationError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except OddsApiRequestError as exc:
+    except (ApiFootballRequestError, OddsApiRequestError) as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     evaluated_markets = [
         evaluate_market(
@@ -57,18 +66,28 @@ def run_scan(request: ScanRequest) -> ScanResponse:
     ]
 
     warnings = [
-        "BTTS is not included in the core EPL odds feed used by Version 1 live scanning.",
+        f"Odds source: {source}.",
+        "BTTS is not included in the current Version 1 live scan.",
         "Only complete match winner and over/under 2.5 markets are evaluated.",
     ]
 
     return ScanResponse(
-        mode="live",
+        mode=source,
         scanned_at=datetime.now(UTC),
         evaluated_market_count=len(evaluated_markets),
         opportunity_count=len(opportunities),
         opportunities=opportunities,
         warnings=warnings,
     )
+
+
+def _fetch_raw_events(source: str) -> list[dict]:
+    if source == "api_football":
+        return ApiFootballClient().fetch_epl_odds()
+    if source == "the_odds_api":
+        return TheOddsApiClient().fetch_epl_odds()
+
+    raise ValueError("source must be one of: api_football, the_odds_api")
 
 
 def _run_demo_scan(bankroll: float) -> ScanResponse:
